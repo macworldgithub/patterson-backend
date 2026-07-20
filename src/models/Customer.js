@@ -1,5 +1,11 @@
 const mongoose = require('mongoose');
 
+const transform = function(doc, ret) {
+    ret.id = ret._id;
+    delete ret._id;
+    delete ret.__v;
+};
+
 const vehicleSchema = new mongoose.Schema({
     make: { type: String },
     model: { type: String },
@@ -14,7 +20,11 @@ const vehicleSchema = new mongoose.Schema({
     nextServiceDue: { type: String },
     financeEndDate: { type: String },
     warrantyExpiry: { type: String }
-}, { _id: true });
+}, { 
+    _id: true,
+    toJSON: { virtuals: true, transform },
+    toObject: { virtuals: true, transform }
+});
 
 const customerSchema = new mongoose.Schema({
     firstName: { type: String, required: true, trim: true },
@@ -45,12 +55,15 @@ const customerSchema = new mongoose.Schema({
     notes: { type: String },
     doNotCall: { type: Boolean, default: false },
     tags: [{ type: String }]
-}, { timestamps: true });
+}, { 
+    timestamps: true,
+    toJSON: { virtuals: true, transform },
+    toObject: { virtuals: true, transform }
+});
 
 // Auto-compute fullName before save
-customerSchema.pre('save', function (next) {
+customerSchema.pre('save', function () {
     this.fullName = `${this.firstName} ${this.lastName}`;
-    next();
 });
 
 module.exports = mongoose.model('Customer', customerSchema);
