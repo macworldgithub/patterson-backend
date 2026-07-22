@@ -1,7 +1,7 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const ctrl = require('../controllers/userController');
-const { protect, authorize } = require('../middleware/auth');
+const ctrl = require("../controllers/userController");
+const { protect, authorize } = require("../middleware/auth");
 
 /**
  * @swagger
@@ -39,7 +39,79 @@ const { protect, authorize } = require('../middleware/auth');
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/login', ctrl.login);
+router.post("/login", ctrl.login);
+
+// Forgot password (generate reset token)
+/**
+ * @swagger
+ * /api/auth/forgot-password:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Generate a password reset token for the given email
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *     responses:
+ *       200:
+ *         description: Reset token generated (in production this is emailed)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 resetToken:
+ *                   type: string
+ *       400:
+ *         $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         $ref: '#/components/schemas/ErrorResponse'
+ */
+router.post("/forgot-password", ctrl.forgotPassword);
+
+// Change password for authenticated user
+/**
+ * @swagger
+ * /api/auth/change-password:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Change password for authenticated user
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [currentPassword, newPassword]
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         $ref: '#/components/schemas/SuccessResponse'
+ *       400:
+ *         $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         $ref: '#/components/schemas/ErrorResponse'
+ */
+router.post("/change-password", protect, ctrl.changePassword);
 
 /**
  * @swagger
@@ -62,7 +134,7 @@ router.post('/login', ctrl.login);
  *       401:
  *         description: Not authenticated
  */
-router.get('/me', protect, ctrl.getMe);
+router.get("/me", protect, ctrl.getMe);
 
 /**
  * @swagger
@@ -102,7 +174,7 @@ router.get('/me', protect, ctrl.getMe);
  *                   items:
  *                     $ref: '#/components/schemas/User'
  */
-router.get('/', protect, authorize('super_admin', 'admin'), ctrl.getUsers);
+router.get("/", protect, authorize("super_admin", "admin"), ctrl.getUsers);
 
 /**
  * @swagger
@@ -132,9 +204,8 @@ router.get('/', protect, authorize('super_admin', 'admin'), ctrl.getUsers);
  *         description: Validation error or duplicate email
  */
 
-
 // router.post('/', protect, authorize('super_admin', 'admin'), ctrl.createUser);
-router.post('/', ctrl.createUser);
+router.post("/", ctrl.createUser);
 
 /**
  * @swagger
@@ -160,7 +231,7 @@ router.post('/', ctrl.createUser);
  *       404:
  *         description: User not found
  */
-router.put('/:id', protect, ctrl.updateUser);
+router.put("/:id", protect, ctrl.updateUser);
 
 /**
  * @swagger
@@ -180,6 +251,6 @@ router.put('/:id', protect, ctrl.updateUser);
  *       404:
  *         description: User not found
  */
-router.delete('/:id', protect, authorize('super_admin'), ctrl.deleteUser);
+router.delete("/:id", protect, authorize("super_admin"), ctrl.deleteUser);
 
 module.exports = router;
