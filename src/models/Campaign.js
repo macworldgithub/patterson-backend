@@ -1,16 +1,23 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const campaignSchema = new mongoose.Schema({
+const campaignSchema = new mongoose.Schema(
+  {
     name: { type: String, required: true, trim: true },
     type: {
-        type: String,
-        enum: ['service_reminder', 'upgrade_offer', 'reengagement', 'finance_renewal', 'parts_upsell'],
-        required: true
+      type: String,
+      enum: [
+        "service_reminder",
+        "upgrade_offer",
+        "reengagement",
+        "finance_renewal",
+        "parts_upsell",
+      ],
+      required: true,
     },
     status: {
-        type: String,
-        enum: ['active', 'paused', 'completed', 'scheduled', 'draft', 'failed'],
-        default: 'draft'
+      type: String,
+      enum: ["active", "paused", "completed", "scheduled", "draft", "failed"],
+      default: "draft",
     },
     brand: { type: String, required: true },
     location: { type: String, required: true },
@@ -27,9 +34,11 @@ const campaignSchema = new mongoose.Schema({
     maxAttempts: { type: Number, default: 3 },
     attemptsCompleted: { type: Number, default: 0 },
     revenueImpact: { type: Number, default: 0 },
-    aiAgentName: { type: String, default: 'Aria' },
-    script: { type: String, default: '' },
-    tags: [{ type: String }]
-}, { timestamps: true });
+    aiAgentName: { type: String, default: "Aria" },
+    script: { type: String, default: "" },
+    tags: [{ type: String }],
+  },
+  { timestamps: true },
+);
 
-module.exports = mongoose.model('Campaign', campaignSchema);
+module.exports = mongoose.model("Campaign", campaignSchema);

@@ -58,9 +58,9 @@
 
 
 
-const dns = require("dns"); //Only for Hamza
-dns.setDefaultResultOrder("ipv4first"); //Only for Hamza
-dns.setServers(["8.8.8.8", "8.8.4.4"]); //Only for Hamza
+// const dns = require("dns"); //Only for Hamza
+// dns.setDefaultResultOrder("ipv4first"); //Only for Hamza
+// dns.setServers(["8.8.8.8", "8.8.4.4"]); //Only for Hamza
 
 require("dotenv").config();
 const express = require("express");
