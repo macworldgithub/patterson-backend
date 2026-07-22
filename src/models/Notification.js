@@ -1,5 +1,11 @@
 const mongoose = require('mongoose');
 
+const transform = function(doc, ret) {
+    ret.id = ret._id;
+    delete ret._id;
+    delete ret.__v;
+};
+
 const notificationSchema = new mongoose.Schema({
     type: {
         type: String,
@@ -12,6 +18,10 @@ const notificationSchema = new mongoose.Schema({
     actionUrl: { type: String },
     relatedId: { type: String },
     metadata: { type: mongoose.Schema.Types.Mixed }
-}, { timestamps: true });
+}, { 
+    timestamps: true,
+    toJSON: { virtuals: true, transform },
+    toObject: { virtuals: true, transform }
+});
 
 module.exports = mongoose.model('Notification', notificationSchema);
