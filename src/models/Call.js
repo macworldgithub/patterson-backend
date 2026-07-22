@@ -1,5 +1,11 @@
 const mongoose = require('mongoose');
 
+const transform = function(doc, ret) {
+    ret.id = ret._id;
+    delete ret._id;
+    delete ret.__v;
+};
+
 const transcriptSegmentSchema = new mongoose.Schema({
     speaker: { type: String, enum: ['agent', 'customer'] },
     speakerName: { type: String },
@@ -7,7 +13,7 @@ const transcriptSegmentSchema = new mongoose.Schema({
     timestamp: { type: Number },
     sentiment: { type: String, enum: ['positive', 'neutral', 'negative'] },
     confidence: { type: Number }
-}, { _id: true });
+}, { toJSON: { virtuals: true, transform }, toObject: { virtuals: true, transform } });
 
 const callSchema = new mongoose.Schema({
     customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
@@ -43,6 +49,6 @@ const callSchema = new mongoose.Schema({
     agentName: { type: String },
     dealershipLocation: { type: String },
     brand: { type: String }
-}, { timestamps: true });
+}, { timestamps: true, toJSON: { virtuals: true, transform }, toObject: { virtuals: true, transform } });
 
 module.exports = mongoose.model('Call', callSchema);

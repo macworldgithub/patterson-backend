@@ -4,10 +4,10 @@ const options = {
     definition: {
         openapi: '3.0.0',
         info: {
-            title: 'Patterson Cheney CRM API',
+            title: 'Patterson Chenny CRM API',
             version: '1.0.0',
             description:
-                'REST API for the Patterson Cheney Automotive Group AI-powered Outbound Customer Engagement Platform. Built by OmniSuiteAI.',
+                'REST API for the Patterson Chenny Automotive Group AI-powered Outbound Customer Engagement Platform. Built by OmniSuiteAI.',
             contact: {
                 name: 'OmniSuiteAI',
                 // email: 'info@omnisuiteai.com',
@@ -20,7 +20,7 @@ const options = {
                 description: 'Local Development',
             },
             {
-                url: 'https://api.pattersoncheney-crm.com',
+                url: 'https://api.pattersonChenny-crm.com',
                 description: 'Production',
             },
         ],
@@ -39,7 +39,7 @@ const options = {
                     type: 'object',
                     required: ['email', 'password'],
                     properties: {
-                        email: { type: 'string', format: 'email', example: 'alex.harrison@pattersoncheney.com.au' },
+                        email: { type: 'string', format: 'email', example: 'alex.harrison@pattersonChenny.com.au' },
                         password: { type: 'string', example: 'Patterson2026!' },
                     },
                 },
@@ -84,7 +84,7 @@ const options = {
                         attemptsCompleted: { type: 'integer', example: 876 },
                         revenueImpact: { type: 'number', example: 294000 },
                         aiAgentName: { type: 'string', example: 'Aria' },
-                        script: { type: 'string', example: 'Hi, this is Aria calling from Patterson Cheney Toyota...' },
+                        script: { type: 'string', example: 'Hi, this is Aria calling from Patterson Chenny Toyota...' },
                         tags: { type: 'array', items: { type: 'string' }, example: ['high-value', 'service', 'Q2'] },
                         createdAt: { type: 'string', format: 'date-time' },
                         updatedAt: { type: 'string', format: 'date-time' },
@@ -157,7 +157,7 @@ const options = {
                         upgradeScore: { type: 'integer', minimum: 1, maximum: 5, example: 5 },
                         vehicle: { $ref: '#/components/schemas/Vehicle' },
                         previousVehicles: { type: 'array', items: { $ref: '#/components/schemas/Vehicle' } },
-                        assignedDealership: { type: 'string', example: 'Patterson Cheney Toyota Keysborough' },
+                        assignedDealership: { type: 'string', example: 'Patterson Chenny Toyota Keysborough' },
                         brand: { type: 'string', example: 'Toyota' },
                         totalSpend: { type: 'number', example: 72400 },
                         lifetimeValue: { type: 'number', example: 98000 },
@@ -287,7 +287,7 @@ const options = {
                         firstName: { type: 'string', example: 'Alex' },
                         lastName: { type: 'string', example: 'Harrison' },
                         fullName: { type: 'string', example: 'Alex Harrison' },
-                        email: { type: 'string', format: 'email', example: 'alex.harrison@pattersoncheney.com.au' },
+                        email: { type: 'string', format: 'email', example: 'alex.harrison@pattersonChenny.com.au' },
                         role: { type: 'string', enum: ['super_admin', 'admin', 'manager', 'agent', 'viewer', 'finance'], example: 'super_admin' },
                         status: { type: 'string', enum: ['active', 'inactive', 'pending', 'suspended'], example: 'active' },
                         avatar: { type: 'string' },
@@ -412,7 +412,7 @@ const options = {
                                 upgradeScore: { type: 'integer', example: 5 },
                             },
                         },
-                        script: { type: 'string', example: 'Hi, this is Aria calling from Patterson Cheney Toyota...' },
+                        script: { type: 'string', example: 'Hi, this is Aria calling from Patterson Chenny Toyota...' },
                     },
                 },
 

@@ -2,6 +2,7 @@ const Customer = require('../models/Customer');
 const AuditLog = require('../models/AuditLog');
 const csv = require('csv-parser');
 const { Readable } = require('stream');
+const mongoose = require('mongoose');
 
 // GET /api/customers
 exports.getCustomers = async (req, res) => {
@@ -33,7 +34,7 @@ exports.getCustomers = async (req, res) => {
 // GET /api/customers/:id
 exports.getCustomerById = async (req, res) => {
     try {
-        const customer = await Customer.findById(req.params.id).populate('campaignHistory', 'name status type');
+        const customer = await Customer.findById(req.params.id);
         if (!customer) return res.status(404).json({ success: false, message: 'Customer not found' });
         res.json({ success: true, data: customer });
     } catch (err) {
@@ -44,6 +45,11 @@ exports.getCustomerById = async (req, res) => {
 // POST /api/customers
 exports.createCustomer = async (req, res) => {
     try {
+        // Clean up invalid _id to prevent Mongoose CastError
+        if (req.body.vehicle && req.body.vehicle._id && !mongoose.Types.ObjectId.isValid(req.body.vehicle._id)) {
+            delete req.body.vehicle._id;
+        }
+
         const customer = await Customer.create(req.body);
         res.status(201).json({ success: true, data: customer });
     } catch (err) {
@@ -54,6 +60,11 @@ exports.createCustomer = async (req, res) => {
 // PUT /api/customers/:id
 exports.updateCustomer = async (req, res) => {
     try {
+        // Clean up invalid _id to prevent Mongoose CastError
+        if (req.body.vehicle && req.body.vehicle._id && !mongoose.Types.ObjectId.isValid(req.body.vehicle._id)) {
+            delete req.body.vehicle._id;
+        }
+
         // Recompute fullName if name fields changed
         if (req.body.firstName || req.body.lastName) {
             const current = await Customer.findById(req.params.id);
@@ -99,33 +110,35 @@ exports.importCustomers = async (req, res) => {
         stream.pipe(csv())
             .on('data', (row) => {
                 results.push({
-                    firstName: row.firstName || row.fullName?.split(' ')[0] || 'Unknown',
-                    lastName: row.lastName || row.fullName?.split(' ').slice(1).join(' ') || 'Unknown',
-                    fullName: row.fullName || `${row.firstName} ${row.lastName}`,
-                    email: row.email || '',
-                    phone: row.phone || '',
-                    mobilePhone: row.mobilePhone || row.phone || '',
-                    suburb: row.suburb || '',
-                    state: row.state || 'VIC',
-                    postcode: row.postcode || '',
-                    brand: row.brand || '',
-                    assignedDealership: row.assignedDealership || '',
-                    status: 'active',
-                    upgradeScore: parseInt(row.upgradeScore) || 3,
-                    doNotCall: row.doNotCall === 'true',
+                    firstName: row.firstName || (row.fullName?.split(' ')[0] || 'Unknown'),
+                    lastName:  row.lastName  || (row.fullName?.split(' ').slice(1).join(' ') || 'Unknown'),
+                    fullName:  row.fullName  || `${row.firstName || ''} ${row.lastName || ''}`.trim(),
+                    email:         row.email         || '',
+                    phone:         row.phone         || row.mobilePhone || '',
+                    mobilePhone:   row.mobilePhone   || row.phone || '',
+                    suburb:        row.suburb        || '',
+                    state:         row.state         || 'VIC',
+                    postcode:      row.postcode      || '',
+                    brand:         row.brand         || row.make || 'Toyota',
+                    assignedDealership: row.assignedDealership || 'Imported',
+                    upgradeScore:  parseInt(row.upgradeScore) || 3,
+                    doNotCall:     row.doNotCall === 'true',
+                    status:        'active',
+                    notes:         row.notes || 'Imported via CSV',
+                    tags:          ['imported'],
                     vehicle: {
-                        make: row.make || '',
-                        model: row.model || '',
-                        year: parseInt(row.year) || null,
-                        variant: row.variant || '',
-                        vin: row.vin || '',
-                        regPlate: row.regPlate || '',
-                        odometer: parseInt(row.odometer) || 0,
+                        make:            row.make            || '',
+                        model:           row.model           || '',
+                        year:            parseInt(row.year)  || 2020,
+                        variant:         row.variant         || '',
+                        vin:             row.vin             || '',
+                        regPlate:        row.regPlate        || '',
+                        odometer:        parseInt(row.odometer) || 0,
                         lastServiceDate: row.lastServiceDate || '',
-                        nextServiceDue: row.nextServiceDue || '',
-                        financeEndDate: row.financeEndDate || '',
-                        warrantyExpiry: row.warrantyExpiry || ''
-                    }
+                        nextServiceDue:  row.nextServiceDue  || '',
+                        financeEndDate:  row.financeEndDate  || '',
+                        warrantyExpiry:  row.warrantyExpiry  || '',
+                    },
                 });
             })
             .on('end', async () => {

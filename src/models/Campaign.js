@@ -38,7 +38,23 @@ const campaignSchema = new mongoose.Schema(
     script: { type: String, default: "" },
     tags: [{ type: String }],
   },
-  { timestamps: true },
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+      versionKey: false,
+      transform(doc, ret) {
+        ret.id = ret._id?.toString();
+      },
+    },
+    toObject: {
+      virtuals: true,
+      versionKey: false,
+      transform(doc, ret) {
+        ret.id = ret._id?.toString();
+      },
+    },
+  },
 );
 
 module.exports = mongoose.model("Campaign", campaignSchema);

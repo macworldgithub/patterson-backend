@@ -1,5 +1,14 @@
 const mongoose = require('mongoose');
 
+const transform = function(doc, ret) {
+    ret.id = ret._id;
+    ret.timestamp = ret.createdAt;
+    delete ret.createdAt;
+    delete ret.updatedAt;
+    delete ret._id;
+    delete ret.__v;
+};
+
 const auditLogSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     userName: { type: String },
@@ -16,6 +25,10 @@ const auditLogSchema = new mongoose.Schema({
     ipAddress: { type: String },
     userAgent: { type: String },
     severity: { type: String, enum: ['info', 'warning', 'critical'], default: 'info' }
-}, { timestamps: true });
+}, { 
+    timestamps: true,
+    toJSON: { virtuals: true, transform },
+    toObject: { virtuals: true, transform }
+});
 
 module.exports = mongoose.model('AuditLog', auditLogSchema);
