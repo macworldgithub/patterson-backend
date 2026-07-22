@@ -57,6 +57,9 @@ exports.getUsers = async (req, res) => {
 // POST /api/users
 exports.createUser = async (req, res) => {
     try {
+        if (!req.body.password) {
+            req.body.password = 'Patterson123!';
+        }
         const user = await User.create(req.body);
         const userObj = user.toObject();
         delete userObj.password;

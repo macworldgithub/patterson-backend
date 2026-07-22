@@ -12,6 +12,12 @@ const permissionSchema = new mongoose.Schema({
     }]
 }, { _id: false });
 
+const transform = function(doc, ret) {
+    ret.id = ret._id;
+    delete ret._id;
+    delete ret.__v;
+};
+
 const userSchema = new mongoose.Schema({
     firstName: { type: String, required: true, trim: true },
     lastName: { type: String, required: true, trim: true },
@@ -34,7 +40,11 @@ const userSchema = new mongoose.Schema({
     lastLogin: { type: Date },
     permissions: [permissionSchema],
     activityCount: { type: Number, default: 0 }
-}, { timestamps: true });
+}, { 
+    timestamps: true,
+    toJSON: { virtuals: true, transform },
+    toObject: { virtuals: true, transform }
+});
 
 userSchema.pre('save', async function () {
     this.fullName = `${this.firstName} ${this.lastName}`;

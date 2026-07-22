@@ -51,12 +51,37 @@ exports.getDailyMetrics = async (req, res) => {
                     calls: { $sum: 1 },
                     answered: { $sum: { $cond: [{ $in: ['$outcome', ['booked', 'not_interested', 'callback_requested', 'converted']] }, 1, 0] } },
                     booked: { $sum: { $cond: [{ $eq: ['$outcome', 'booked'] }, 1, 0] } },
-                    converted: { $sum: { $cond: [{ $eq: ['$outcome', 'converted'] }, 1, 0] } }
+                    converted: { $sum: { $cond: [{ $eq: ['$outcome', 'converted'] }, 1, 0] } },
+                    revenue: { $sum: { $ifNull: ['$keyExtractions.dealValue', 0] } }
                 }
             },
-            { $sort: { _id: 1 } }
+            {
+                $project: {
+                    _id: 0,
+                    date: '$_id',
+                    calls: 1,
+                    answered: 1,
+                    booked: 1,
+                    converted: 1,
+                    revenue: 1,
+                    answerRate: {
+                        $cond: [{ $eq: ['$calls', 0] }, 0, { $multiply: [{ $divide: ['$answered', '$calls'] }, 100] }]
+                    },
+                    conversionRate: {
+                        $cond: [{ $eq: ['$calls', 0] }, 0, { $multiply: [{ $divide: ['$booked', '$calls'] }, 100] }]
+                    }
+                }
+            },
+            { $sort: { date: 1 } }
         ]);
-        res.json({ success: true, data: metrics });
+
+        const formattedMetrics = metrics.map(m => ({
+            ...m,
+            answerRate: parseFloat(m.answerRate.toFixed(1)),
+            conversionRate: parseFloat(m.conversionRate.toFixed(1))
+        }));
+
+        res.json({ success: true, data: formattedMetrics });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
@@ -66,11 +91,36 @@ exports.getDailyMetrics = async (req, res) => {
 exports.getLocationMetrics = async (req, res) => {
     try {
         const metrics = await Call.aggregate([
-            { $group: { _id: '$dealershipLocation', calls: { $sum: 1 }, conversions: { $sum: { $cond: [{ $eq: ['$outcome', 'booked'] }, 1, 0] } } } },
-            { $project: { location: '$_id', calls: 1, conversions: 1, _id: 0 } },
+            {
+                $group: {
+                    _id: '$dealershipLocation',
+                    calls: { $sum: 1 },
+                    answered: { $sum: { $cond: [{ $in: ['$outcome', ['booked', 'not_interested', 'callback_requested', 'converted']] }, 1, 0] } },
+                    conversions: { $sum: { $cond: [{ $eq: ['$outcome', 'booked'] }, 1, 0] } },
+                    revenue: { $sum: { $ifNull: ['$keyExtractions.dealValue', 0] } }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    location: { $ifNull: ['$_id', 'Unknown'] },
+                    calls: 1,
+                    conversions: 1,
+                    revenue: 1,
+                    answerRate: {
+                        $cond: [{ $eq: ['$calls', 0] }, 0, { $multiply: [{ $divide: ['$answered', '$calls'] }, 100] }]
+                    }
+                }
+            },
             { $sort: { calls: -1 } }
         ]);
-        res.json({ success: true, data: metrics });
+
+        const formattedMetrics = metrics.map(m => ({
+            ...m,
+            answerRate: parseFloat(m.answerRate.toFixed(1))
+        }));
+
+        res.json({ success: true, data: formattedMetrics });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
@@ -80,8 +130,26 @@ exports.getLocationMetrics = async (req, res) => {
 exports.getBrandMetrics = async (req, res) => {
     try {
         const metrics = await Campaign.aggregate([
-            { $group: { _id: '$brand', campaigns: { $sum: 1 }, totalContacts: { $sum: '$totalContacts' }, conversions: { $sum: '$conversions' }, revenue: { $sum: '$revenueImpact' } } },
-            { $project: { brand: '$_id', campaigns: 1, totalContacts: 1, conversions: 1, revenue: 1, _id: 0 } },
+            {
+                $group: {
+                    _id: '$brand',
+                    campaigns: { $sum: 1 },
+                    calls: { $sum: '$totalContacts' },
+                    conversions: { $sum: '$conversions' },
+                    revenue: { $sum: '$revenueImpact' }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    brand: { $ifNull: ['$_id', 'Unknown'] },
+                    campaigns: 1,
+                    calls: 1,
+                    conversions: 1,
+                    revenue: 1,
+                    avgUpgradeScore: { $literal: 0 }
+                }
+            },
             { $sort: { revenue: -1 } }
         ]);
         res.json({ success: true, data: metrics });
