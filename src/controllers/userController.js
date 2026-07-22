@@ -62,13 +62,24 @@ exports.getUsers = async (req, res) => {
   }
 };
 
-// POST /api/users
+// POST /api/users  (self-service registration — role & status are NOT user-controllable)
 exports.createUser = async (req, res) => {
   try {
+    // Strip any role/status supplied by the client — they cannot be self-assigned.
+    // Hardcode safe defaults so even direct API calls cannot escalate privileges.
+    delete req.body.role;
+    delete req.body.status;
+
     if (!req.body.password) {
       req.body.password = "Patterson123!";
     }
-    const user = await User.create(req.body);
+
+    const user = await User.create({
+      ...req.body,
+      role: "viewer",
+      status: "pending",
+    });
+
     const userObj = user.toObject();
     delete userObj.password;
     res.status(201).json({ success: true, data: userObj });
