@@ -16,6 +16,7 @@ const transcriptSegmentSchema = new mongoose.Schema({
 }, { toJSON: { virtuals: true, transform }, toObject: { virtuals: true, transform } });
 
 const callSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
     customerName: { type: String },
     customerPhone: { type: String },

@@ -6,6 +6,9 @@ exports.getCampaigns = async (req, res) => {
   try {
     const { status, brand, location, type, search } = req.query;
     const filter = {};
+    if (req.user && req.user.role !== "super_admin") {
+      filter.userId = req.user._id;
+    }
     if (status && status !== "all") filter.status = status;
     if (brand && brand !== "all") filter.brand = brand;
     if (location) filter.location = location;
@@ -22,7 +25,11 @@ exports.getCampaigns = async (req, res) => {
 // GET /api/campaigns/:id
 exports.getCampaignById = async (req, res) => {
   try {
-    const campaign = await Campaign.findById(req.params.id);
+    const filter = { _id: req.params.id };
+    if (req.user && req.user.role !== "super_admin") {
+      filter.userId = req.user._id;
+    }
+    const campaign = await Campaign.findOne(filter);
     if (!campaign)
       return res
         .status(404)
@@ -36,7 +43,8 @@ exports.getCampaignById = async (req, res) => {
 // POST /api/campaigns
 exports.createCampaign = async (req, res) => {
   try {
-    const campaign = await Campaign.create(req.body);
+    const campaignData = { ...req.body, userId: req.user?._id };
+    const campaign = await Campaign.create(campaignData);
     await AuditLog.create({
       userId: req.user?._id,
       userName: req.user?.fullName || "System",
@@ -58,7 +66,11 @@ exports.createCampaign = async (req, res) => {
 // PUT /api/campaigns/:id
 exports.updateCampaign = async (req, res) => {
   try {
-    const campaign = await Campaign.findByIdAndUpdate(req.params.id, req.body, {
+    const filter = { _id: req.params.id };
+    if (req.user && req.user.role !== "super_admin") {
+      filter.userId = req.user._id;
+    }
+    const campaign = await Campaign.findOneAndUpdate(filter, req.body, {
       new: true,
       runValidators: true,
     });
@@ -90,8 +102,12 @@ exports.updateCampaign = async (req, res) => {
 exports.updateCampaignStatus = async (req, res) => {
   try {
     const { status } = req.body;
-    const campaign = await Campaign.findByIdAndUpdate(
-      req.params.id,
+    const filter = { _id: req.params.id };
+    if (req.user && req.user.role !== "super_admin") {
+      filter.userId = req.user._id;
+    }
+    const campaign = await Campaign.findOneAndUpdate(
+      filter,
       { status },
       { new: true, runValidators: true },
     );
@@ -128,7 +144,11 @@ exports.updateCampaignStatus = async (req, res) => {
 // DELETE /api/campaigns/:id
 exports.deleteCampaign = async (req, res) => {
   try {
-    const campaign = await Campaign.findByIdAndDelete(req.params.id);
+    const filter = { _id: req.params.id };
+    if (req.user && req.user.role !== "super_admin") {
+      filter.userId = req.user._id;
+    }
+    const campaign = await Campaign.findOneAndDelete(filter);
     if (!campaign)
       return res
         .status(404)

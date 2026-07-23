@@ -21,7 +21,7 @@ app.use(
   cors({
     origin: process.env.FRONTEND_URL || "http://localhost:3000",
     credentials: true,
-  })
+  }),
 );
 app.use(morgan("dev"));
 
@@ -39,7 +39,7 @@ app.use(
       filter: true,
       docExpansion: "none",
     },
-  })
+  }),
 );
 
 // Serve raw OpenAPI JSON
@@ -53,7 +53,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Health check
 app.get("/api/health", (req, res) =>
-  res.json({ status: "ok", message: "Patterson Cheney CRM API running" })
+  res.json({ status: "ok", message: "Patterson Cheney CRM API running" }),
 );
 
 // Routes
@@ -70,7 +70,7 @@ app.use("/api/simulation", require("../src/routes/simulation"));
 
 // 404
 app.use((req, res) =>
-  res.status(404).json({ success: false, message: "Route not found" })
+  res.status(404).json({ success: false, message: "Route not found" }),
 );
 
 // Error handler (must be last)

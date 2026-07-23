@@ -27,6 +27,7 @@ const vehicleSchema = new mongoose.Schema({
 });
 
 const customerSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     firstName: { type: String, required: true, trim: true },
     lastName: { type: String, required: true, trim: true },
     fullName: { type: String },

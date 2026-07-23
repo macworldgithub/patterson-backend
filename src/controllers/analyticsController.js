@@ -5,6 +5,10 @@ const Customer = require('../models/Customer');
 // GET /api/analytics/dashboard
 exports.getDashboardStats = async (req, res) => {
     try {
+        const filter = {};
+        if (req.user && req.user.role !== "super_admin") {
+            filter.userId = req.user._id;
+        }
         const [
             totalCampaigns,
             activeCampaigns,
@@ -13,15 +17,16 @@ exports.getDashboardStats = async (req, res) => {
             bookedCalls,
             revenueAgg
         ] = await Promise.all([
-            Campaign.countDocuments(),
-            Campaign.countDocuments({ status: 'active' }),
-            Customer.countDocuments(),
-            Call.countDocuments(),
-            Call.countDocuments({ outcome: 'booked' }),
-            Campaign.aggregate([{ $group: { _id: null, total: { $sum: '$revenueImpact' } } }])
+            Campaign.countDocuments(filter),
+            Campaign.countDocuments({ ...filter, status: 'active' }),
+            Customer.countDocuments(filter),
+            Call.countDocuments(filter),
+            Call.countDocuments({ ...filter, outcome: 'booked' }),
+            Campaign.aggregate([{ $match: filter }, { $group: { _id: null, total: { $sum: '$revenueImpact' } } }])
         ]);
         const totalRevenue = revenueAgg[0]?.total || 0;
         const answerRateAgg = await Call.aggregate([
+            { $match: filter },
             { $group: { _id: null, answered: { $sum: { $cond: [{ $in: ['$outcome', ['booked', 'not_interested', 'callback_requested', 'converted']] }, 1, 0] } }, total: { $sum: 1 } } }
         ]);
         const answerRate = answerRateAgg[0] ? ((answerRateAgg[0].answered / answerRateAgg[0].total) * 100).toFixed(1) : 0;
@@ -43,8 +48,12 @@ exports.getDailyMetrics = async (req, res) => {
         const { days = 30 } = req.query;
         const since = new Date();
         since.setDate(since.getDate() - parseInt(days));
+        const filter = { createdAt: { $gte: since } };
+        if (req.user && req.user.role !== "super_admin") {
+            filter.userId = req.user._id;
+        }
         const metrics = await Call.aggregate([
-            { $match: { createdAt: { $gte: since } } },
+            { $match: filter },
             {
                 $group: {
                     _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
@@ -90,7 +99,9 @@ exports.getDailyMetrics = async (req, res) => {
 // GET /api/analytics/by-location
 exports.getLocationMetrics = async (req, res) => {
     try {
+        const matchStage = req.user && req.user.role !== "super_admin" ? [{ $match: { userId: req.user._id } }] : [];
         const metrics = await Call.aggregate([
+            ...matchStage,
             {
                 $group: {
                     _id: '$dealershipLocation',
@@ -129,7 +140,9 @@ exports.getLocationMetrics = async (req, res) => {
 // GET /api/analytics/by-brand
 exports.getBrandMetrics = async (req, res) => {
     try {
+        const matchStage = req.user && req.user.role !== "super_admin" ? [{ $match: { userId: req.user._id } }] : [];
         const metrics = await Campaign.aggregate([
+            ...matchStage,
             {
                 $group: {
                     _id: '$brand',
@@ -161,12 +174,16 @@ exports.getBrandMetrics = async (req, res) => {
 // GET /api/analytics/funnel
 exports.getFunnelData = async (req, res) => {
     try {
+        const filter = {};
+        if (req.user && req.user.role !== "super_admin") {
+            filter.userId = req.user._id;
+        }
         const [totalContacts, attempted, answered, booked, converted] = await Promise.all([
-            Customer.countDocuments(),
-            Call.countDocuments(),
-            Call.countDocuments({ outcome: { $in: ['booked', 'not_interested', 'callback_requested', 'converted'] } }),
-            Call.countDocuments({ outcome: 'booked' }),
-            Call.countDocuments({ outcome: 'converted' })
+            Customer.countDocuments(filter),
+            Call.countDocuments(filter),
+            Call.countDocuments({ ...filter, outcome: { $in: ['booked', 'not_interested', 'callback_requested', 'converted'] } }),
+            Call.countDocuments({ ...filter, outcome: 'booked' }),
+            Call.countDocuments({ ...filter, outcome: 'converted' })
         ]);
         const funnel = [
             { stage: 'Total Contacts', count: totalContacts, percentage: 100 },

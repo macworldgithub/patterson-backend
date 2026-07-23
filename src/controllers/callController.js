@@ -13,6 +13,9 @@ exports.getCalls = async (req, res) => {
       limit = 20,
     } = req.query;
     const filter = {};
+    if (req.user && req.user.role !== "super_admin") {
+      filter.userId = req.user._id;
+    }
     if (outcome && outcome !== "all") filter.outcome = outcome;
     if (brand) filter.brand = brand;
     if (campaignId) filter.campaignId = campaignId;
@@ -46,7 +49,11 @@ exports.getCalls = async (req, res) => {
 // GET /api/calls/:id
 exports.getCallById = async (req, res) => {
   try {
-    const call = await Call.findById(req.params.id);
+    const filter = { _id: req.params.id };
+    if (req.user && req.user.role !== "super_admin") {
+      filter.userId = req.user._id;
+    }
+    const call = await Call.findOne(filter);
     if (!call)
       return res
         .status(404)
@@ -60,7 +67,8 @@ exports.getCallById = async (req, res) => {
 // POST /api/calls
 exports.createCall = async (req, res) => {
   try {
-    const call = await Call.create(req.body);
+    const callData = { ...req.body, userId: req.user?._id };
+    const call = await Call.create(callData);
     res.status(201).json({ success: true, data: call });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
@@ -70,7 +78,11 @@ exports.createCall = async (req, res) => {
 // PUT /api/calls/:id
 exports.updateCall = async (req, res) => {
   try {
-    const call = await Call.findByIdAndUpdate(req.params.id, req.body, {
+    const filter = { _id: req.params.id };
+    if (req.user && req.user.role !== "super_admin") {
+      filter.userId = req.user._id;
+    }
+    const call = await Call.findOneAndUpdate(filter, req.body, {
       new: true,
     });
     if (!call)
@@ -86,13 +98,18 @@ exports.updateCall = async (req, res) => {
 // GET /api/calls/stats — summary stats for dashboard
 exports.getCallStats = async (req, res) => {
   try {
+    const filter = {};
+    if (req.user && req.user.role !== "super_admin") {
+      filter.userId = req.user._id;
+    }
     const [total, booked, noAnswer, voicemail] = await Promise.all([
-      Call.countDocuments(),
-      Call.countDocuments({ outcome: "booked" }),
-      Call.countDocuments({ outcome: "no_answer" }),
-      Call.countDocuments({ outcome: "voicemail" }),
+      Call.countDocuments(filter),
+      Call.countDocuments({ ...filter, outcome: "booked" }),
+      Call.countDocuments({ ...filter, outcome: "no_answer" }),
+      Call.countDocuments({ ...filter, outcome: "voicemail" }),
     ]);
     const durationAgg = await Call.aggregate([
+      { $match: filter },
       { $group: { _id: null, avgDuration: { $avg: "$duration" } } },
     ]);
     const avgDuration = durationAgg[0]?.avgDuration || 0;
