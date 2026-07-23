@@ -2,6 +2,7 @@ const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const AuditLog = require("../models/AuditLog");
+const { sendPasswordResetEmail } = require("../services/emailService");
 
 const signToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
@@ -133,24 +134,54 @@ exports.forgotPassword = async (req, res) => {
       return res
         .status(400)
         .json({ success: false, message: "Email required" });
-    const user = await User.findOne({ email });
-    if (!user)
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+
+    // Always respond with 200 to prevent user enumeration
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (!user) {
+      return res.json({
+        success: true,
+        message: "If that email is registered, a reset link has been sent.",
+      });
+    }
+
+    // Generate a secure random token and hash it before storing
     const resetToken = crypto.randomBytes(32).toString("hex");
     const resetTokenHash = crypto
       .createHash("sha256")
       .update(resetToken)
       .digest("hex");
+
     user.resetPasswordToken = resetTokenHash;
     user.resetPasswordExpires = Date.now() + 60 * 60 * 1000; // 1 hour
     await user.save({ validateBeforeSave: false });
-    // In production you would email `resetToken` to the user. For now return it in response for testing.
+
+    // Derive the frontend base URL dynamically from the request origin so this
+    // works for both local dev (localhost:3000) and the Vercel deployment,
+    // with the env var as a fallback for non-browser clients (e.g. curl).
+    const frontendOrigin =
+      req.headers.origin ||
+      req.headers.referer?.replace(/\/(api\/.+)?$/, "") ||
+      process.env.FRONTEND_URL ||
+      "http://localhost:3000";
+
+    // Send the email (plain token — not the hash)
+    try {
+      await sendPasswordResetEmail(user.email, resetToken, frontendOrigin);
+    } catch (emailErr) {
+      // Roll back token so the user can try again
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpires = undefined;
+      await user.save({ validateBeforeSave: false });
+      console.error("[Email] Failed to send reset email:", emailErr.message);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to send reset email. Please try again later.",
+      });
+    }
+
     res.json({
       success: true,
-      message: "Password reset token generated",
-      resetToken,
+      message: "If that email is registered, a reset link has been sent.",
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -179,6 +210,45 @@ exports.changePassword = async (req, res) => {
     user.password = newPassword;
     await user.save();
     res.json({ success: true, message: "Password changed successfully" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// POST /api/auth/reset-password
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, email, newPassword } = req.body;
+    if (!token || !email || !newPassword)
+      return res.status(400).json({
+        success: false,
+        message: "Token, email, and new password are required",
+      });
+
+    // Hash the incoming plain token to compare against stored hash
+    const resetTokenHash = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
+
+    const user = await User.findOne({
+      email: email.toLowerCase().trim(),
+      resetPasswordToken: resetTokenHash,
+      resetPasswordExpires: { $gt: Date.now() },
+    }).select("+resetPasswordToken +resetPasswordExpires");
+
+    if (!user)
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired reset token. Please request a new one.",
+      });
+
+    user.password = newPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    res.json({ success: true, message: "Password reset successfully. You can now log in." });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

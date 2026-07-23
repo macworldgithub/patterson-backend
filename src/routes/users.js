@@ -113,6 +113,9 @@ router.post("/forgot-password", ctrl.forgotPassword);
  */
 router.post("/change-password", protect, ctrl.changePassword);
 
+// Reset password using token from email link (public)
+router.post("/reset-password", ctrl.resetPassword);
+
 /**
  * @swagger
  * /api/auth/me:
