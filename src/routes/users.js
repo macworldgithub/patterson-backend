@@ -114,7 +114,44 @@ router.post("/forgot-password", ctrl.forgotPassword);
 router.post("/change-password", protect, ctrl.changePassword);
 
 // Reset password using token from email link (public)
+/**
+ * @swagger
+ * /api/auth/reset-password:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Reset password using token from email link
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [token, email, newPassword]
+ *             properties:
+ *               token:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               newPassword:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Password reset successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       400:
+ *         description: Bad Request / Invalid Token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.post("/reset-password", ctrl.resetPassword);
+
 
 /**
  * @swagger
