@@ -69,6 +69,6 @@ const { protect, authorize } = require('../middleware/auth');
  *       403:
  *         description: Insufficient permissions
  */
-router.get('/', protect, authorize('super_admin', 'admin'), ctrl.getAuditLogs);
+router.get('/', protect, ctrl.getAuditLogs);
 
 module.exports = router;

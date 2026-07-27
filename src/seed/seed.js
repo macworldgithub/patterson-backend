@@ -4,7 +4,6 @@ const Campaign = require("../models/Campaign");
 const Customer = require("../models/Customer");
 const Call = require("../models/Call");
 const User = require("../models/User");
-const Role = require("../models/Role");
 const Notification = require("../models/Notification");
 const Integration = require("../models/Integration");
 
@@ -21,23 +20,22 @@ async function seed() {
     Customer.deleteMany({}),
     Call.deleteMany({}),
     User.deleteMany({}),
-    Role.deleteMany({}),
     Notification.deleteMany({}),
     Integration.deleteMany({}),
   ]);
   console.log("Cleared existing data.");
 
-  // Seed Users (password: Patterson2026!)
+  // Seed Users — all are admins, scoped to their branch
+  // Password for all: Patterson2026!
   const users = await User.insertMany([
     {
       firstName: "Alex",
       lastName: "Harrison",
       email: "alex.harrison@pattersoncheney.com.au",
       password: "Patterson2026!",
-      role: "super_admin",
+      role: "admin",
       status: "active",
-      dealership: "Group HQ",
-      brand: "All Brands",
+      branch: "Keysborough",
     },
     {
       firstName: "Priya",
@@ -46,33 +44,30 @@ async function seed() {
       password: "Patterson2026!",
       role: "admin",
       status: "active",
-      dealership: "Toyota Keysborough",
-      brand: "Toyota",
+      branch: "Keysborough",
     },
     {
       firstName: "Tom",
       lastName: "Bradley",
       email: "tom.bradley@pattersoncheney.com.au",
       password: "Patterson2026!",
-      role: "manager",
+      role: "admin",
       status: "active",
-      dealership: "Mercedes-Benz Berwick",
-      brand: "Mercedes-Benz",
+      branch: "Dandenong",
     },
     {
       firstName: "Jessica",
       lastName: "Park",
       email: "jessica.park@pattersoncheney.com.au",
       password: "Patterson2026!",
-      role: "agent",
+      role: "admin",
       status: "active",
-      dealership: "Isuzu Dandenong",
-      brand: "Isuzu UTE",
+      branch: "Ringwood",
     },
   ]);
   console.log(`Seeded ${users.length} users.`);
 
-  // Seed Campaigns
+  // Seed Campaigns — each with a branch
   const campaigns = await Campaign.insertMany([
     {
       name: "Toyota HiLux Service Reminder Q2 2026",
@@ -80,6 +75,7 @@ async function seed() {
       status: "active",
       brand: "Toyota",
       location: "Keysborough",
+      branch: "Keysborough",
       totalContacts: 1240,
       contactsAttempted: 876,
       contactsReached: 612,
@@ -99,11 +95,12 @@ async function seed() {
       tags: ["high-value", "service", "Q2"],
     },
     {
-      name: "Mercedes GLC Upgrade Offer — June",
+      name: "RAV4 Hybrid Upgrade Offer — June",
       type: "upgrade_offer",
       status: "active",
-      brand: "Mercedes-Benz",
-      location: "Berwick",
+      brand: "Toyota",
+      location: "Keysborough",
+      branch: "Keysborough",
       totalContacts: 480,
       contactsAttempted: 360,
       contactsReached: 228,
@@ -118,8 +115,8 @@ async function seed() {
       attemptsCompleted: 360,
       revenueImpact: 1116000,
       aiAgentName: "Aria",
-      script: "Good morning, I'm Aria from Patterson Cheney Mercedes-Benz...",
-      tags: ["premium", "upgrade", "mercedes"],
+      script: "Good morning, I'm Aria from Patterson Cheney Toyota Keysborough...",
+      tags: ["premium", "upgrade", "rav4"],
     },
     {
       name: "Isuzu D-Max Finance Renewal",
@@ -127,6 +124,7 @@ async function seed() {
       status: "paused",
       brand: "Isuzu UTE",
       location: "Dandenong",
+      branch: "Dandenong",
       totalContacts: 320,
       contactsAttempted: 210,
       contactsReached: 144,
@@ -141,15 +139,16 @@ async function seed() {
       attemptsCompleted: 210,
       revenueImpact: 570000,
       aiAgentName: "Max",
-      script: "Hi there, this is Max calling from Patterson Cheney Isuzu...",
+      script: "Hi there, this is Max calling from Patterson Cheney Isuzu Dandenong...",
       tags: ["finance", "isuzu", "renewal"],
     },
     {
-      name: "RAV4 Hybrid Re-engagement — Churned",
+      name: "Mitsubishi Triton Re-engagement — Churned",
       type: "reengagement",
       status: "completed",
-      brand: "Toyota",
-      location: "Chadstone",
+      brand: "Mitsubishi",
+      location: "Ringwood",
+      branch: "Ringwood",
       totalContacts: 650,
       contactsAttempted: 650,
       contactsReached: 410,
@@ -164,38 +163,16 @@ async function seed() {
       attemptsCompleted: 650,
       revenueImpact: 183000,
       aiAgentName: "Aria",
-      script: "Hi, I'm Aria from Patterson Cheney Chadstone Toyota...",
-      tags: ["reengagement", "hybrid", "completed"],
+      script: "Hi, I'm Aria from Patterson Cheney Ringwood...",
+      tags: ["reengagement", "triton", "completed"],
     },
     {
-      name: "Mahindra Scorpio-N Launch Outreach",
-      type: "upgrade_offer",
-      status: "scheduled",
-      brand: "Mahindra",
-      location: "Werribee",
-      totalContacts: 290,
-      contactsAttempted: 0,
-      contactsReached: 0,
-      bookings: 0,
-      conversions: 0,
-      conversionRate: 0,
-      answerRate: 0,
-      startDate: "2026-07-01",
-      endDate: "2026-07-31",
-      scheduledTime: "10:00 AM - 5:00 PM",
-      maxAttempts: 3,
-      attemptsCompleted: 0,
-      revenueImpact: 0,
-      aiAgentName: "Aria",
-      script: "Hi, this is Aria from Werribee Mahindra...",
-      tags: ["launch", "mahindra", "new-model"],
-    },
-    {
-      name: "Mercedes C-Class Winter Service Drive",
+      name: "Toyota LandCruiser Winter Service Drive",
       type: "service_reminder",
       status: "draft",
-      brand: "Mercedes-Benz",
-      location: "Brighton",
+      brand: "Toyota",
+      location: "Keysborough",
+      branch: "Keysborough",
       totalContacts: 380,
       contactsAttempted: 0,
       contactsReached: 0,
@@ -211,13 +188,13 @@ async function seed() {
       revenueImpact: 0,
       aiAgentName: "Aria",
       script:
-        "Good morning, I'm Aria from Patterson Cheney Mercedes-Benz Brighton...",
-      tags: ["winter", "service", "mercedes", "draft"],
+        "Good morning, I'm Aria from Patterson Cheney Toyota Keysborough...",
+      tags: ["winter", "service", "landcruiser", "draft"],
     },
   ]);
   console.log(`Seeded ${campaigns.length} campaigns.`);
 
-  // Seed Customers
+  // Seed Customers — each with a branch (suburb is where they live, branch is the dealership)
   const customers = await Customer.insertMany([
     {
       firstName: "James",
@@ -226,13 +203,14 @@ async function seed() {
       phone: "(03) 9789 2341",
       mobilePhone: "0412 345 678",
       address: "14 Acacia Court",
-      suburb: "Keysborough",
+      suburb: "Clayton",
       state: "VIC",
-      postcode: "3173",
+      postcode: "3168",
       status: "active",
       upgradeScore: 5,
       brand: "Toyota",
       assignedDealership: "Patterson Cheney Toyota Keysborough",
+      branch: "Keysborough",
       totalSpend: 72400,
       lifetimeValue: 98000,
       campaignHistory: [campaigns[0]._id],
@@ -264,28 +242,29 @@ async function seed() {
       phone: "(03) 9554 8812",
       mobilePhone: "0433 876 543",
       address: "3/82 Canterbury Road",
-      suburb: "Berwick",
+      suburb: "Springvale",
       state: "VIC",
-      postcode: "3806",
+      postcode: "3171",
       status: "active",
       upgradeScore: 4,
-      brand: "Mercedes-Benz",
-      assignedDealership: "Mercedes-Benz Berwick",
+      brand: "Toyota",
+      assignedDealership: "Patterson Cheney Toyota Keysborough",
+      branch: "Keysborough",
       totalSpend: 94500,
       lifetimeValue: 142000,
       campaignHistory: [campaigns[1]._id],
       lastContactDate: "2026-06-18",
       preferredContactTime: "Afternoon",
-      notes: "Expressed interest in GLC 43 AMG at last service.",
+      notes: "Expressed interest in RAV4 Hybrid at last service.",
       doNotCall: false,
-      tags: ["premium", "upgrade-interest", "amg-prospect"],
+      tags: ["premium", "upgrade-interest", "rav4-prospect"],
       vehicle: {
-        make: "Mercedes-Benz",
-        model: "GLC",
+        make: "Toyota",
+        model: "Camry",
         year: 2022,
-        variant: "300 SUV AMG Line",
-        color: "Polar White",
-        vin: "WDC2539571F456789",
+        variant: "Ascent Sport Hybrid",
+        color: "Lunar White",
+        vin: "6T1KU4EE6M0456789",
         regPlate: "XYZ-789",
         odometer: 42100,
         purchaseDate: "2022-03-10",
@@ -295,7 +274,6 @@ async function seed() {
         warrantyExpiry: "2027-03-10",
       },
     },
-    
     {
       firstName: "Emma",
       lastName: "Chen",
@@ -303,29 +281,30 @@ async function seed() {
       phone: "(03) 9593 7712",
       mobilePhone: "0425 678 901",
       address: "8 Marine Parade",
-      suburb: "Brighton",
+      suburb: "Dandenong",
       state: "VIC",
-      postcode: "3186",
+      postcode: "3175",
       status: "active",
       upgradeScore: 5,
-      brand: "Mercedes-Benz",
-      assignedDealership: "Mercedes-Benz Brighton",
+      brand: "Isuzu UTE",
+      assignedDealership: "Patterson Cheney Isuzu Dandenong",
+      branch: "Dandenong",
       totalSpend: 86200,
       lifetimeValue: 168000,
-      campaignHistory: [],
+      campaignHistory: [campaigns[2]._id],
       lastContactDate: "2026-06-28",
       preferredContactTime: "Morning",
       notes:
-        "Long-term customer — 3rd Mercedes. Finance ending Sep 26. Prime upgrade candidate.",
+        "Long-term customer — 2nd D-Max. Finance ending Sep 26. Prime upgrade candidate.",
       doNotCall: false,
       tags: ["vip", "repeat-buyer", "finance-ending", "upgrade-ready"],
       vehicle: {
-        make: "Mercedes-Benz",
-        model: "C-Class",
+        make: "Isuzu",
+        model: "D-Max",
         year: 2022,
-        variant: "C 200 Sedan AMG Line",
-        color: "Selenite Grey",
-        vin: "WDD2050561R890123",
+        variant: "LS-U 4x4 Crew Cab",
+        color: "Obsidian Grey",
+        vin: "JACDPS16M7K890123",
         regPlate: "JKL-987",
         odometer: 38700,
         purchaseDate: "2022-09-15",
@@ -333,6 +312,45 @@ async function seed() {
         nextServiceDue: "2026-03-15",
         financeEndDate: "2026-09-15",
         warrantyExpiry: "2027-09-15",
+      },
+    },
+    {
+      firstName: "Marcus",
+      lastName: "Williams",
+      email: "marcus.w@outlook.com",
+      phone: "(03) 9730 5544",
+      mobilePhone: "0411 222 333",
+      address: "5 Sherwood Court",
+      suburb: "Croydon",
+      state: "VIC",
+      postcode: "3136",
+      status: "active",
+      upgradeScore: 3,
+      brand: "Mitsubishi",
+      assignedDealership: "Patterson Cheney Ringwood",
+      branch: "Ringwood",
+      totalSpend: 45000,
+      lifetimeValue: 62000,
+      campaignHistory: [campaigns[3]._id],
+      lastContactDate: "2026-05-20",
+      preferredContactTime: "Evening",
+      notes: "Interested in Triton upgrade. Prefers contact after 5pm.",
+      doNotCall: false,
+      tags: ["upgrade-interest", "triton"],
+      vehicle: {
+        make: "Mitsubishi",
+        model: "Triton",
+        year: 2020,
+        variant: "GLS Premium 4WD",
+        color: "White Diamond",
+        vin: "MMBJNKB40LH112233",
+        regPlate: "MNO-456",
+        odometer: 72000,
+        purchaseDate: "2020-08-01",
+        lastServiceDate: "2025-08-01",
+        nextServiceDue: "2026-02-01",
+        financeEndDate: "2026-08-01",
+        warrantyExpiry: "2025-08-01",
       },
     },
   ]);
@@ -360,9 +378,9 @@ async function seed() {
     },
     {
       type: "campaign_complete",
-      title: "Campaign Completed — RAV4 Re-engagement",
+      title: "Campaign Completed — Triton Re-engagement",
       message:
-        "RAV4 Hybrid Re-engagement campaign completed. 61 conversions, $183K revenue impact.",
+        "Mitsubishi Triton Re-engagement campaign completed. 61 conversions, $183K revenue impact.",
       read: true,
       actionUrl: `/campaigns/${campaigns[3]._id}`,
       relatedId: campaigns[3]._id.toString(),
@@ -424,7 +442,10 @@ async function seed() {
   console.log("Seeded integrations.");
 
   console.log("\n✅ Seed complete!");
-  console.log("Login: alex.harrison@pattersoncheney.com.au / Patterson2026!");
+  console.log("Login credentials:");
+  console.log("  Keysborough: alex.harrison@pattersoncheney.com.au / Patterson2026!");
+  console.log("  Dandenong:   tom.bradley@pattersoncheney.com.au / Patterson2026!");
+  console.log("  Ringwood:    jessica.park@pattersoncheney.com.au / Patterson2026!");
   await mongoose.disconnect();
 }
 

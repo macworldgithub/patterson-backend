@@ -4,14 +4,13 @@ const AuditLog = require("../models/AuditLog");
 // GET /api/campaigns
 exports.getCampaigns = async (req, res) => {
   try {
-    const { status, brand, location, type, search } = req.query;
+    const { status, type, search } = req.query;
     const filter = {};
-    if (req.user && req.user.role !== "super_admin") {
-      filter.userId = req.user._id;
+    // Always scope to the logged-in user's branch
+    if (req.user && req.user.branch) {
+      filter.branch = req.user.branch;
     }
     if (status && status !== "all") filter.status = status;
-    if (brand && brand !== "all") filter.brand = brand;
-    if (location) filter.location = location;
     if (type) filter.type = type;
     if (search) filter.name = { $regex: search, $options: "i" };
 
@@ -26,8 +25,8 @@ exports.getCampaigns = async (req, res) => {
 exports.getCampaignById = async (req, res) => {
   try {
     const filter = { _id: req.params.id };
-    if (req.user && req.user.role !== "super_admin") {
-      filter.userId = req.user._id;
+    if (req.user && req.user.branch) {
+      filter.branch = req.user.branch;
     }
     const campaign = await Campaign.findOne(filter);
     if (!campaign)
@@ -43,7 +42,12 @@ exports.getCampaignById = async (req, res) => {
 // POST /api/campaigns
 exports.createCampaign = async (req, res) => {
   try {
-    const campaignData = { ...req.body, userId: req.user?._id };
+    // Automatically assign branch and userId from the authenticated user
+    const campaignData = {
+      ...req.body,
+      userId: req.user?._id,
+      branch: req.user?.branch,
+    };
     const campaign = await Campaign.create(campaignData);
     await AuditLog.create({
       userId: req.user?._id,
@@ -66,9 +70,12 @@ exports.createCampaign = async (req, res) => {
 // PUT /api/campaigns/:id
 exports.updateCampaign = async (req, res) => {
   try {
+    // Prevent branch from being changed via update
+    delete req.body.branch;
+
     const filter = { _id: req.params.id };
-    if (req.user && req.user.role !== "super_admin") {
-      filter.userId = req.user._id;
+    if (req.user && req.user.branch) {
+      filter.branch = req.user.branch;
     }
     const campaign = await Campaign.findOneAndUpdate(filter, req.body, {
       new: true,
@@ -103,8 +110,8 @@ exports.updateCampaignStatus = async (req, res) => {
   try {
     const { status } = req.body;
     const filter = { _id: req.params.id };
-    if (req.user && req.user.role !== "super_admin") {
-      filter.userId = req.user._id;
+    if (req.user && req.user.branch) {
+      filter.branch = req.user.branch;
     }
     const campaign = await Campaign.findOneAndUpdate(
       filter,
@@ -145,8 +152,8 @@ exports.updateCampaignStatus = async (req, res) => {
 exports.deleteCampaign = async (req, res) => {
   try {
     const filter = { _id: req.params.id };
-    if (req.user && req.user.role !== "super_admin") {
-      filter.userId = req.user._id;
+    if (req.user && req.user.branch) {
+      filter.branch = req.user.branch;
     }
     const campaign = await Campaign.findOneAndDelete(filter);
     if (!campaign)

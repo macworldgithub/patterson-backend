@@ -5,7 +5,6 @@ exports.getCalls = async (req, res) => {
   try {
     const {
       outcome,
-      brand,
       campaignId,
       customerId,
       search,
@@ -13,11 +12,11 @@ exports.getCalls = async (req, res) => {
       limit = 20,
     } = req.query;
     const filter = {};
-    if (req.user && req.user.role !== "super_admin") {
-      filter.userId = req.user._id;
+    // Always scope to the logged-in user's branch
+    if (req.user && req.user.branch) {
+      filter.branch = req.user.branch;
     }
     if (outcome && outcome !== "all") filter.outcome = outcome;
-    if (brand) filter.brand = brand;
     if (campaignId) filter.campaignId = campaignId;
     if (customerId) filter.customerId = customerId;
     if (search) {
@@ -50,8 +49,8 @@ exports.getCalls = async (req, res) => {
 exports.getCallById = async (req, res) => {
   try {
     const filter = { _id: req.params.id };
-    if (req.user && req.user.role !== "super_admin") {
-      filter.userId = req.user._id;
+    if (req.user && req.user.branch) {
+      filter.branch = req.user.branch;
     }
     const call = await Call.findOne(filter);
     if (!call)
@@ -67,7 +66,11 @@ exports.getCallById = async (req, res) => {
 // POST /api/calls
 exports.createCall = async (req, res) => {
   try {
-    const callData = { ...req.body, userId: req.user?._id };
+    const callData = {
+      ...req.body,
+      userId: req.user?._id,
+      branch: req.user?.branch,
+    };
     const call = await Call.create(callData);
     res.status(201).json({ success: true, data: call });
   } catch (err) {
@@ -78,9 +81,12 @@ exports.createCall = async (req, res) => {
 // PUT /api/calls/:id
 exports.updateCall = async (req, res) => {
   try {
+    // Prevent branch from being changed
+    delete req.body.branch;
+
     const filter = { _id: req.params.id };
-    if (req.user && req.user.role !== "super_admin") {
-      filter.userId = req.user._id;
+    if (req.user && req.user.branch) {
+      filter.branch = req.user.branch;
     }
     const call = await Call.findOneAndUpdate(filter, req.body, {
       new: true,
@@ -99,8 +105,8 @@ exports.updateCall = async (req, res) => {
 exports.getCallStats = async (req, res) => {
   try {
     const filter = {};
-    if (req.user && req.user.role !== "super_admin") {
-      filter.userId = req.user._id;
+    if (req.user && req.user.branch) {
+      filter.branch = req.user.branch;
     }
     const [total, booked, noAnswer, voicemail] = await Promise.all([
       Call.countDocuments(filter),

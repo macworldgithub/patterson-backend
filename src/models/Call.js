@@ -48,7 +48,7 @@ const callSchema = new mongoose.Schema({
     },
     confidenceScore: { type: Number, default: 0 },
     agentName: { type: String },
-    dealershipLocation: { type: String },
+    branch: { type: String },
     brand: { type: String }
 }, { timestamps: true, toJSON: { virtuals: true, transform }, toObject: { virtuals: true, transform } });
 

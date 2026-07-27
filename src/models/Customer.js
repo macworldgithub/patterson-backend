@@ -55,7 +55,8 @@ const customerSchema = new mongoose.Schema({
     preferredContactTime: { type: String },
     notes: { type: String },
     doNotCall: { type: Boolean, default: false },
-    tags: [{ type: String }]
+    tags: [{ type: String }],
+    branch: { type: String }
 }, { 
     timestamps: true,
     toJSON: { virtuals: true, transform },

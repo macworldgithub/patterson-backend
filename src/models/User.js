@@ -1,33 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
-const permissionSchema = new mongoose.Schema(
-  {
-    resource: {
-      type: String,
-      enum: [
-        "campaigns",
-        "customers",
-        "calls",
-        "analytics",
-        "users",
-        "roles",
-        "audit_logs",
-        "settings",
-        "integrations",
-        "simulation",
-      ],
-    },
-    actions: [
-      {
-        type: String,
-        enum: ["view", "create", "edit", "delete", "export"],
-      },
-    ],
-  },
-  { _id: false },
-);
-
 const transform = function (doc, ret) {
   ret.id = ret._id;
   delete ret._id;
@@ -49,8 +22,8 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true, select: false },
     role: {
       type: String,
-      enum: ["super_admin", "admin", "manager", "agent", "viewer", "finance"],
-      default: "viewer",
+      enum: ["admin"],
+      default: "admin",
     },
     status: {
       type: String,
@@ -58,10 +31,8 @@ const userSchema = new mongoose.Schema(
       default: "active",
     },
     avatar: { type: String },
-    dealership: { type: String },
-    brand: { type: String },
+    branch: { type: String },
     lastLogin: { type: Date },
-    permissions: [permissionSchema],
     activityCount: { type: Number, default: 0 },
     resetPasswordToken: { type: String, select: false },
     resetPasswordExpires: { type: Date },

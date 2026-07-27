@@ -214,7 +214,7 @@ router.get("/me", protect, ctrl.getMe);
  *                   items:
  *                     $ref: '#/components/schemas/User'
  */
-router.get("/", protect, authorize("super_admin", "admin"), ctrl.getUsers);
+router.get("/", protect, ctrl.getUsers);
 
 /**
  * @swagger
@@ -291,6 +291,6 @@ router.put("/:id", protect, ctrl.updateUser);
  *       404:
  *         description: User not found
  */
-router.delete("/:id", protect, authorize("super_admin"), ctrl.deleteUser);
+router.delete("/:id", protect, ctrl.deleteUser);
 
 module.exports = router;

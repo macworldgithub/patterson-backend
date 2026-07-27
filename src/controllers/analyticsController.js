@@ -5,9 +5,10 @@ const Customer = require('../models/Customer');
 // GET /api/analytics/dashboard
 exports.getDashboardStats = async (req, res) => {
     try {
+        // Always scope to the logged-in user's branch
         const filter = {};
-        if (req.user && req.user.role !== "super_admin") {
-            filter.userId = req.user._id;
+        if (req.user && req.user.branch) {
+            filter.branch = req.user.branch;
         }
         const [
             totalCampaigns,
@@ -49,8 +50,8 @@ exports.getDailyMetrics = async (req, res) => {
         const since = new Date();
         since.setDate(since.getDate() - parseInt(days));
         const filter = { createdAt: { $gte: since } };
-        if (req.user && req.user.role !== "super_admin") {
-            filter.userId = req.user._id;
+        if (req.user && req.user.branch) {
+            filter.branch = req.user.branch;
         }
         const metrics = await Call.aggregate([
             { $match: filter },
@@ -99,12 +100,15 @@ exports.getDailyMetrics = async (req, res) => {
 // GET /api/analytics/by-location
 exports.getLocationMetrics = async (req, res) => {
     try {
-        const matchStage = req.user && req.user.role !== "super_admin" ? [{ $match: { userId: req.user._id } }] : [];
+        const matchFilter = {};
+        if (req.user && req.user.branch) {
+            matchFilter.branch = req.user.branch;
+        }
         const metrics = await Call.aggregate([
-            ...matchStage,
+            { $match: matchFilter },
             {
                 $group: {
-                    _id: '$dealershipLocation',
+                    _id: '$branch',
                     calls: { $sum: 1 },
                     answered: { $sum: { $cond: [{ $in: ['$outcome', ['booked', 'not_interested', 'callback_requested', 'converted']] }, 1, 0] } },
                     conversions: { $sum: { $cond: [{ $eq: ['$outcome', 'booked'] }, 1, 0] } },
@@ -140,9 +144,12 @@ exports.getLocationMetrics = async (req, res) => {
 // GET /api/analytics/by-brand
 exports.getBrandMetrics = async (req, res) => {
     try {
-        const matchStage = req.user && req.user.role !== "super_admin" ? [{ $match: { userId: req.user._id } }] : [];
+        const matchFilter = {};
+        if (req.user && req.user.branch) {
+            matchFilter.branch = req.user.branch;
+        }
         const metrics = await Campaign.aggregate([
-            ...matchStage,
+            { $match: matchFilter },
             {
                 $group: {
                     _id: '$brand',
@@ -175,8 +182,8 @@ exports.getBrandMetrics = async (req, res) => {
 exports.getFunnelData = async (req, res) => {
     try {
         const filter = {};
-        if (req.user && req.user.role !== "super_admin") {
-            filter.userId = req.user._id;
+        if (req.user && req.user.branch) {
+            filter.branch = req.user.branch;
         }
         const [totalContacts, attempted, answered, booked, converted] = await Promise.all([
             Customer.countDocuments(filter),

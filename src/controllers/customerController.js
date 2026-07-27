@@ -7,10 +7,13 @@ const mongoose = require('mongoose');
 // GET /api/customers
 exports.getCustomers = async (req, res) => {
     try {
-        const { status, brand, search, page = 1, limit = 10, doNotCall } = req.query;
+        const { status, search, page = 1, limit = 10, doNotCall } = req.query;
+        // Always scope to the logged-in user's branch
         const filter = {};
+        if (req.user && req.user.branch) {
+            filter.branch = req.user.branch;
+        }
         if (status && status !== 'all') filter.status = status;
-        if (brand && brand !== 'all') filter.brand = brand;
         if (doNotCall !== undefined) filter.doNotCall = doNotCall === 'true';
         if (search) {
             filter.$or = [
@@ -34,7 +37,11 @@ exports.getCustomers = async (req, res) => {
 // GET /api/customers/:id
 exports.getCustomerById = async (req, res) => {
     try {
-        const customer = await Customer.findById(req.params.id);
+        const filter = { _id: req.params.id };
+        if (req.user && req.user.branch) {
+            filter.branch = req.user.branch;
+        }
+        const customer = await Customer.findOne(filter);
         if (!customer) return res.status(404).json({ success: false, message: 'Customer not found' });
         res.json({ success: true, data: customer });
     } catch (err) {
@@ -50,7 +57,15 @@ exports.createCustomer = async (req, res) => {
             delete req.body.vehicle._id;
         }
 
-        const customer = await Customer.create(req.body);
+        // Automatically assign the logged-in user's branch — never accept branch from client
+        const customerData = {
+            ...req.body,
+            branch: req.user?.branch || req.body.branch,
+        };
+        delete customerData.branch; // remove any client-supplied branch
+        customerData.branch = req.user?.branch; // always use server-side branch
+
+        const customer = await Customer.create(customerData);
         res.status(201).json({ success: true, data: customer });
     } catch (err) {
         res.status(400).json({ success: false, message: err.message });
@@ -65,12 +80,20 @@ exports.updateCustomer = async (req, res) => {
             delete req.body.vehicle._id;
         }
 
+        // Never allow branch to be changed via update
+        delete req.body.branch;
+
         // Recompute fullName if name fields changed
         if (req.body.firstName || req.body.lastName) {
             const current = await Customer.findById(req.params.id);
             req.body.fullName = `${req.body.firstName || current.firstName} ${req.body.lastName || current.lastName}`;
         }
-        const customer = await Customer.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+
+        const filter = { _id: req.params.id };
+        if (req.user && req.user.branch) {
+            filter.branch = req.user.branch;
+        }
+        const customer = await Customer.findOneAndUpdate(filter, req.body, { new: true, runValidators: true });
         if (!customer) return res.status(404).json({ success: false, message: 'Customer not found' });
         res.json({ success: true, data: customer });
     } catch (err) {
@@ -81,7 +104,11 @@ exports.updateCustomer = async (req, res) => {
 // DELETE /api/customers/:id
 exports.deleteCustomer = async (req, res) => {
     try {
-        const customer = await Customer.findByIdAndDelete(req.params.id);
+        const filter = { _id: req.params.id };
+        if (req.user && req.user.branch) {
+            filter.branch = req.user.branch;
+        }
+        const customer = await Customer.findOneAndDelete(filter);
         if (!customer) return res.status(404).json({ success: false, message: 'Customer not found' });
         await AuditLog.create({
             userId: req.user?._id,
@@ -105,6 +132,7 @@ exports.deleteCustomer = async (req, res) => {
 exports.importCustomers = async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
+        const userBranch = req.user?.branch;
         const results = [];
         const stream = Readable.from(req.file.buffer.toString());
         stream.pipe(csv())
@@ -126,6 +154,7 @@ exports.importCustomers = async (req, res) => {
                     status:        'active',
                     notes:         row.notes || 'Imported via CSV',
                     tags:          ['imported'],
+                    branch:        userBranch, // always assign from logged-in user
                     vehicle: {
                         make:            row.make            || '',
                         model:           row.model           || '',
@@ -165,10 +194,14 @@ exports.importCustomers = async (req, res) => {
 // GET /api/customers/export — CSV export
 exports.exportCustomers = async (req, res) => {
     try {
-        const customers = await Customer.find({});
-        const header = 'id,fullName,email,mobilePhone,suburb,make,model,year,nextServiceDue,status,upgradeScore,doNotCall\n';
+        const filter = {};
+        if (req.user && req.user.branch) {
+            filter.branch = req.user.branch;
+        }
+        const customers = await Customer.find(filter);
+        const header = 'id,fullName,email,mobilePhone,suburb,make,model,year,nextServiceDue,status,upgradeScore,doNotCall,branch\n';
         const rows = customers.map(c =>
-            `"${c._id}","${c.fullName}","${c.email}","${c.mobilePhone}","${c.suburb}","${c.vehicle?.make || ''}","${c.vehicle?.model || ''}","${c.vehicle?.year || ''}","${c.vehicle?.nextServiceDue || ''}","${c.status}","${c.upgradeScore}","${c.doNotCall}"`
+            `"${c._id}","${c.fullName}","${c.email}","${c.mobilePhone}","${c.suburb}","${c.vehicle?.make || ''}","${c.vehicle?.model || ''}","${c.vehicle?.year || ''}","${c.vehicle?.nextServiceDue || ''}","${c.status}","${c.upgradeScore}","${c.doNotCall}","${c.branch || ''}"`
         ).join('\n');
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', 'attachment; filename="customers.csv"');
