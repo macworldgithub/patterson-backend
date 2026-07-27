@@ -295,6 +295,7 @@ async function seed() {
         warrantyExpiry: "2027-03-10",
       },
     },
+    
     {
       firstName: "Emma",
       lastName: "Chen",
