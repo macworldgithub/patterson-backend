@@ -14,8 +14,24 @@ exports.getCampaigns = async (req, res) => {
     if (type) filter.type = type;
     if (search) filter.name = { $regex: search, $options: "i" };
 
-    const campaigns = await Campaign.find(filter).sort({ createdAt: -1 });
-    res.json({ success: true, data: campaigns, count: campaigns.length });
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.max(1, Math.min(100, parseInt(req.query.limit, 10) || 20));
+    const skip = (page - 1) * limit;
+
+    const [total, campaigns] = await Promise.all([
+      Campaign.countDocuments(filter),
+      Campaign.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    ]);
+
+    res.json({
+      success: true,
+      data: campaigns,
+      count: campaigns.length,
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

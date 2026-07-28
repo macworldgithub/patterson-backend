@@ -42,6 +42,21 @@ const { protect } = require('../middleware/auth');
  *         schema:
  *           type: string
  *         description: Search by campaign name
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           example: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           example: 20
+ *         description: Number of campaigns per page
  *     responses:
  *       200:
  *         description: Array of campaigns
